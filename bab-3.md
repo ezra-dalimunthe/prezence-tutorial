@@ -259,11 +259,45 @@ npm install dayjs
 
 Day.js akan digunakan untuk mengolah tanggal, misalnya menampilkan tanggal hari ini pada form Attendance.
 
-Jika nanti membutuhkan date picker dari MUI, pasang package tambahan:
+Pasang date picker dari MUI:
 
 ```powershell
 npm install @mui/x-date-pickers
 ```
+
+Gunakan `LocalizationProvider` pada `resources/js/app.tsx` agar semua page dapat menggunakan date picker dengan adapter Day.js:
+
+```tsx
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+
+<LocalizationProvider dateAdapter={AdapterDayjs}>
+    <App {...props} />
+</LocalizationProvider>
+```
+
+Untuk input tanggal, gunakan `DatePicker` dari `@mui/x-date-pickers`, bukan `TextField type="date"`.
+
+### Fungsi `LocalizationProvider`
+
+`LocalizationProvider` adalah context global yang dibutuhkan oleh component date picker MUI X. Provider ini menyediakan:
+
+- date adapter yang digunakan untuk mengolah tanggal;
+- cara parsing dan formatting tanggal;
+- konfigurasi locale tanggal;
+- konfigurasi yang sama untuk seluruh `DatePicker` dalam aplikasi.
+
+Pada project ini kita menggunakan Day.js sebagai date library melalui `AdapterDayjs`:
+
+```tsx
+<LocalizationProvider dateAdapter={AdapterDayjs}>
+    <App {...props} />
+</LocalizationProvider>
+```
+
+MUI X mendukung beberapa date library. Karena project ini sudah menggunakan Day.js, kita memilih `AdapterDayjs`. Tanpa `LocalizationProvider`, `DatePicker` tidak dapat menemukan localization context yang dibutuhkannya dan akan menghasilkan error.
+
+`LocalizationProvider` tidak bertugas menerjemahkan seluruh teks aplikasi. Tugas utamanya adalah menyediakan konfigurasi dan date adapter untuk component MUI X.
 
 > MUI adalah library React. Karena itu, MUI tidak digunakan langsung pada file Blade. Blade hanya digunakan untuk kebutuhan tertentu seperti template email.
 
@@ -475,7 +509,7 @@ resources/js/layouts/MainLayout.tsx
 Isi dengan layout sederhana:
 
 ```tsx
-import { AppBar, Button, Container, Toolbar, Typography } from "@mui/material";
+import { AppBar, Box, Button, Container, Toolbar, Typography } from "@mui/material";
 import {  usePage, router } from "@inertiajs/react";
 import type { ReactNode } from "react";
 
@@ -539,6 +573,16 @@ export default function MainLayout({ children }: { children: ReactNode }) {
 ```
 
 `MainLayout` digunakan oleh semua page agar navigasi dan struktur tampilan tetap konsisten.
+
+Untuk button pada `MainLayout`, gunakan pola ukuran yang sama:
+
+```tsx
+<Box sx={{ width: '100px' }}>
+    <Button size="small" fullWidth color="inherit">
+        About
+    </Button>
+</Box>
+```
 
 ---
 
@@ -1068,6 +1112,7 @@ export default function Login() {
                     {errors.email && <Alert severity="error">{errors.email}</Alert>}
 
                     <TextField
+                        size="small"
                         label="Email"
                         type="email"
                         value={data.email}
@@ -1078,6 +1123,7 @@ export default function Login() {
                     />
 
                     <TextField
+                        size="small"
                         label="Password"
                         type="password"
                         value={data.password}
@@ -1087,9 +1133,11 @@ export default function Login() {
                         required
                     />
 
-                    <Button type="submit" variant="contained" disabled={processing}>
-                        {processing ? 'Memproses...' : 'Login'}
-                    </Button>
+                    <Box sx={{ width: '100px' }}>
+                        <Button size="small" fullWidth type="submit" variant="contained" disabled={processing}>
+                            {processing ? 'Memproses...' : 'Login'}
+                        </Button>
+                    </Box>
                 </Stack>
             </Paper>
         </MainLayout>
@@ -1098,6 +1146,22 @@ export default function Login() {
 ```
 
 `useForm` dari Inertia membantu mengirim form ke Laravel dan menerima kembali error validasi dari server.
+
+### Ukuran Control MUI
+
+Agar tampilan aplikasi tetap ringkas, gunakan `size="small"` pada `TextField`, `Select`, dan `Button`. Button dibungkus dengan `Box` yang memiliki lebar tetap:
+
+```tsx
+<TextField size="small" label="Email" />
+
+<Box sx={{ width: '100px' }}>
+    <Button size="small" fullWidth variant="contained">
+        Simpan
+    </Button>
+</Box>
+```
+
+Gunakan pola yang sama pada button dan input di page lainnya.
 
 ---
 
@@ -1118,18 +1182,33 @@ app/Http/Controllers/DashboardController.php
 Isi dengan:
 
 ```php
+<?php
+
 namespace App\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return Inertia::render('Dashboard');
+        $type = $request->user()?->role ?? 'guest';
+
+        return Inertia::render('Dashboard', [
+            'type' => $type,
+            'payload' => [],
+        ]);
     }
 }
 ```
+
+Controller mengirimkan dua data ke page React:
+
+- `type` menunjukkan role User yang sedang login;
+- `payload` berisi data yang dibutuhkan oleh dashboard sesuai role tersebut.
+
+Pada tahap ini `payload` masih kosong. Setelah model domain tersedia, controller akan mengirimkan data dashboard `admin` seperti jumlah `Student`, `Teacher`, dan `Staff`.
 
 Buat file:
 
@@ -1137,35 +1216,87 @@ Buat file:
 resources/js/pages/Dashboard.tsx
 ```
 
-Isi dengan dashboard sederhana:
+Isi dengan page wrapper berikut:
 
 ```tsx
-import { Head } from "@inertiajs/react";
-import { Paper, Stack, Typography } from "@mui/material";
-import MainLayout from "../layouts/MainLayout";
+import { Head } from '@inertiajs/react';
+import MainLayout from '@/layouts/MainLayout';
+import {
+    DynamicDashboard,
+    DynamicDashboardProps,
+} from '@/layouts/DynamicDashboard';
 
-export default function Dashboard() {
+export default function Dashboard({
+    type,
+    payload,
+}: DynamicDashboardProps) {
     return (
         <>
             <Head title="Dashboard" />
 
             <MainLayout>
-                <Stack spacing={3}>
-                    <Paper sx={{ p: 4 }}>
-                        <Typography variant="h4">Dashboard</Typography>
-                        <Typography>
-                            Selamat datang di aplikasi Prezence.
-                        </Typography>
-                    </Paper>
-                </Stack>
+                <DynamicDashboard type={type} payload={payload} />
             </MainLayout>
         </>
     );
 }
-
 ```
 
-Pada tahap berikutnya, data `auth` akan dibagikan dari Laravel melalui Inertia. Untuk sementara, dashboard cukup menampilkan halaman sederhana.
+`Dashboard.tsx` adalah page utama yang dirender oleh Inertia. File ini memiliki tanggung jawab untuk memasang `Head` dan `MainLayout`, kemudian meneruskan `type` serta `payload` ke `DynamicDashboard`.
+
+Buat file berikut:
+
+```text
+resources/js/layouts/DynamicDashboard.tsx
+```
+
+Isi dengan:
+
+```tsx
+import AdminDashboard from '@/pages/Admin/Dashboard';
+
+export const DashboardType: Record<string, React.ComponentType<any>> = {
+    admin: AdminDashboard,
+};
+
+export interface DynamicDashboardProps {
+    type: string;
+    payload: any;
+}
+
+export const DynamicDashboard = ({
+    type,
+    payload,
+}: DynamicDashboardProps) => {
+    const SelectedDashboard = DashboardType[type];
+
+    if (!SelectedDashboard) {
+        return;
+    }
+
+    return <SelectedDashboard payload={payload} />;
+};
+```
+
+`DynamicDashboard` memilih component berdasarkan nilai `type`. Component untuk role `admin` akan dibuat pada Bab 7. Jika belum ada component untuk suatu role, tidak ada dashboard khusus yang dirender.
+
+Pada pola ini, kita tidak menggunakan `Outlet` dari `react-router-dom`. Inertia tetap menerima satu page, yaitu `Dashboard.tsx`, dan page tersebut memilih content yang sesuai.
+
+Agar project dapat dijalankan sebelum Bab 7, buat component sementara berikut:
+
+```text
+resources/js/pages/Admin/Dashboard.tsx
+```
+
+```tsx
+import { Typography } from '@mui/material';
+
+export default function AdminDashboard() {
+    return <Typography>Admin Dashboard</Typography>;
+}
+```
+
+Component sementara ini akan diganti dengan dashboard yang menampilkan jumlah `Student`, `Teacher`, dan `Staff` pada Bab 7.
 
 ---
 

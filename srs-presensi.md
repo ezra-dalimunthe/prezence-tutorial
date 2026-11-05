@@ -169,7 +169,7 @@ public function profile(): MorphTo
 }
 ```
 
-Model `Teacher`, `Student`, dan `Staff` masing-masing menyediakan relasi `morphOne(User::class, 'profile')`. Satu `User` harus terhubung dengan tepat satu profile, dan account dibuat setelah profile tersedia.
+Model `Teacher`, `Student`, dan `Staff` masing-masing menyediakan relasi `morphOne(User::class, 'profile')`. Satu `User` harus terhubung dengan tepat satu profile. Profile boleh tersedia tanpa account, tetapi account hanya boleh dibuat setelah profile tersedia.
 
 ### 5.2 `Teacher`
 
@@ -183,7 +183,7 @@ Field minimal:
 | `created_at`   | timestamp   | Laravel timestamp                  |
 | `updated_at`   | timestamp   | Laravel timestamp                  |
 
-`Teacher` memiliki banyak `TeachingAssignment` dan terhubung dengan satu `User` melalui polymorphic relation `profile`.
+`Teacher` memiliki banyak `TeachingAssignment` dan dapat terhubung dengan satu `User` melalui polymorphic relation `profile`.
 
 ### 5.3 `Student`
 
@@ -201,7 +201,7 @@ Field minimal:
 | `created_at`  | timestamp   | Laravel timestamp                  |
 | `updated_at`  | timestamp   | Laravel timestamp                  |
 
-`Student` berada pada satu `ClassRoom`, memiliki banyak `Attendance`, dan terhubung dengan satu `User` melalui polymorphic relation `profile`.
+`Student` berada pada satu `ClassRoom`, memiliki banyak `Attendance`, dan dapat terhubung dengan satu `User` melalui polymorphic relation `profile`.
 
 ### 5.4 `Staff`
 
@@ -217,7 +217,7 @@ Field minimal:
 | `created_at` | timestamp | Laravel timestamp                         |
 | `updated_at` | timestamp | Laravel timestamp                         |
 
-`Staff` terhubung dengan satu `User` melalui polymorphic relation `profile`. `Staff` dapat memiliki `role = admin` atau `role = report_viewer`.
+`Staff` dapat terhubung dengan satu `User` melalui polymorphic relation `profile`. `Staff` dapat memiliki `role = admin` atau `role = report_viewer` pada account `User`-nya.
 
 ### 5.5 `Subject`
 
@@ -439,11 +439,10 @@ Sistem harus menyediakan database seeder untuk membuat satu profile `Staff` dan 
 
 `Admin` harus dapat:
 
-- melihat daftar akun;
-- membuat akun `Teacher`;
-- membuat akun `Student`;
-- membuat akun `Staff` dengan role `admin` atau `report_viewer`;
-- membuat credential `User` untuk profile yang sudah tersedia;
+- melihat daftar profile dan status account-nya;
+- membuat credential `User` untuk profile `Teacher` yang sudah tersedia;
+- membuat credential `User` untuk profile `Student` yang sudah tersedia;
+- membuat credential `User` untuk profile `Staff` yang sudah tersedia, dengan role `admin` atau `report_viewer`;
 - mengubah data akun;
 - mengaktifkan atau menonaktifkan akun;
 - membuat temporary password;
@@ -452,10 +451,33 @@ Sistem harus menyediakan database seeder untuk membuat satu profile `Staff` dan 
 Urutan pembuatan account adalah:
 
 1. `Admin` membuat atau memilih profile `Teacher`, `Student`, atau `Staff`.
-2. `Admin` memilih tindakan membuat credential untuk profile tersebut.
-3. Sistem meminta email yang akan disimpan pada `User`.
+2. Sistem menyimpan profile dan menampilkan dialog pilihan pembuatan account.
+3. Jika `Admin` memilih membuat account, sistem meminta email.
 4. Sistem membuat `User` dengan `profile_type` dan `profile_id` yang wajib diisi.
-5. Sistem membuat temporary password dan mengirimkannya ke email tersebut.
+5. Sistem membuat temporary password dan mengirimkan credential ke email tersebut.
+6. Jika `Admin` memilih nanti, profile tetap tersimpan tanpa account dan tidak dapat digunakan untuk login.
+
+Pembuatan dan perubahan profile tidak boleh meminta field `email`. Email hanya diminta pada proses pembuatan atau perubahan credential `User`.
+
+Untuk frontend, page `Create` dan `Edit` harus menggunakan component `Form` yang sama. Page tersebut bertanggung jawab atas data awal dan HTTP method, sedangkan `Form` bertanggung jawab atas tampilan field. Dialog pembuatan account menggunakan endpoint terpisah dari endpoint penyimpanan profile.
+
+Contoh resource endpoint:
+
+```text
+POST /admin/teachers
+PUT  /admin/teachers/{teacher}
+POST /admin/teachers/{teacher}/account
+
+POST /admin/students
+PUT  /admin/students/{student}
+POST /admin/students/{student}/account
+
+POST /admin/staff
+PUT  /admin/staff/{staff}
+POST /admin/staff/{staff}/account
+```
+
+Pembuatan `User` dan pengiriman email harus dilakukan setelah profile berhasil disimpan. Jika pembuatan account gagal, profile tidak boleh ikut terhapus. Email dikirim setelah transaksi account berhasil dilakukan.
 
 ### FR-005 Student Management
 
@@ -786,10 +808,13 @@ Aturan authorization penting:
 
 ### Account dan Import
 
-- `admin` dapat membuat akun secara manual;
+- `admin` dapat membuat profile `Teacher`, `Student`, dan `Staff` secara manual;
+- setelah profile tersimpan, `admin` dapat memilih membuat credential melalui dialog;
+- email hanya diminta pada proses pembuatan credential, bukan pada form profile;
+- `admin` dapat membuat credential untuk profile yang belum memiliki account;
 - `admin` dapat mengimport `teacher.csv`;
 - `admin` dapat mengimport `student.csv`;
-- `admin` dapat membuat akun `Staff` secara manual;
+- profile hasil import tidak langsung memiliki credential `User`;
 - data dengan `nis` yang sudah ada tidak dibuat ulang;
 - `mobile_phone` duplikat dilaporkan saat import `Teacher`;
 - email duplikat ditolak saat pembuatan credential `User`;

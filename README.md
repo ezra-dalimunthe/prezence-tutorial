@@ -29,6 +29,7 @@ Tutorial ini membahas konsep dan praktik berikut:
 - Inertia.js;
 - TypeScript;
 - MUI v9;
+- mui-file-input;
 - Day.js;
 - SQLite atau MySQL;
 - Laravel Herd;
@@ -62,12 +63,49 @@ Membuat migration dan model `Teacher`, `Subject`, serta `ClassRoom`. Setelah `Cl
 
 [Baca Bab 4](bab-4.md)
 
+### Bab 5 — Teaching Assignment
+
+Membuat `TeachingAssignment` sebagai penghubung antara `Teacher`, `Subject`, dan `ClassRoom`, termasuk foreign key, unique constraint, dan relasi antar-model.
+
+[Baca Bab 5](bab-5.md)
+
+### Bab 6 — Attendance
+
+Membuat entitas `Attendance`, relasi dengan `Student` dan `TeachingAssignment`, status presensi, serta validasi duplikasi berdasarkan tanggal kalender.
+
+[Baca Bab 6](bab-6.md)
+
+### Bab 7 — Admin Page dan Pembuatan Profile
+
+Membuat middleware role, menu admin, Admin Dashboard, serta page untuk membuat profile `Teacher`, `Student`, dan `Staff`.
+
+[Baca Bab 7](bab-7.md)
+
+### Bab 8 — Upload File dan Import Data CSV
+
+Mempelajari upload file sebagai proses aplikasi web, validasi `UploadedFile`, pembacaan dan pengolahan data CSV, penanganan data `imported`, `skipped`, dan `failed`, serta pembuatan profile tanpa langsung membuat account `User`.
+
+[Baca Bab 8](bab-8.md)
+
+### Bab 9 — Teaching Assignment
+
+Membuat CRUD `TeachingAssignment`, menghubungkan `Teacher`, `Subject`, dan `ClassRoom`, serta menjalankan seeder secara manual dari terminal.
+
+[Baca Bab 9](bab-9.md)
+
+### Bab 10 — Teacher dan Pencatatan Attendance
+
+Menggunakan dashboard dinamis untuk Role `teacher`, memilih `TeachingAssignment`, menampilkan Student sesuai ClassRoom, dan mencatat `Attendance`.
+
+[Baca Bab 10](bab-10.md)
+
 ## Dokumen Perancangan
 
 Sebelum membuat fitur aplikasi, kebutuhan produk dan teknis dirumuskan dalam dua dokumen:
 
 - [Product Requirements Document](prd-presensi.md)
 - [Software Requirements Specification](srs-presensi.md)
+- [Entity Relationship Diagram](entities.md)
 
 SRS menjadi acuan utama ketika menentukan field, tipe data, constraint, relasi, route, dan hak akses.
 
@@ -76,6 +114,14 @@ SRS menjadi acuan utama ketika menentukan field, tipe data, constraint, relasi, 
 - [Sekitar Laravel Herd](bab-tambahan-sekitar-laravel-herd.md)
 - [smtp4dev dan MySQL](bab-tambahan-smtp4dev-mysql.md)
 - [Contoh Penyelesaian Student Model](bab-tambahan-student-model.md)
+- [Contekan CRUD Subject](bab-tambahan-crud-subject.md)
+- [Contekan CRUD ClassRoom](bab-tambahan-crud-classroom.md)
+- [MUI Styling dan Theme](bab-tambahan-mui-styling.md)
+
+Contoh file import CSV tersedia pada folder [contoh-csv](contoh-csv):
+
+- [teachers.csv](contoh-csv/teachers.csv)
+- [students.csv](contoh-csv/students.csv)
 
 File `bab-tambahan-student-model.md` berfungsi sebagai contekan. Siswa sebaiknya mengerjakan latihan pada Bab 4 terlebih dahulu sebelum membuka file tersebut.
 

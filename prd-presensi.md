@@ -56,7 +56,7 @@ Tujuan aplikasi adalah:
 
 `Admin` adalah pengguna yang mengelola akun pengguna dan data dasar aplikasi. Akun awal `admin` dibuat melalui database seeder.
 
-`Admin` dapat membuat dan mengelola akun `teacher`, `student`, dan `staff` secara manual melalui aplikasi atau melalui proses import file CSV untuk `teacher` dan `student`.
+`Admin` dapat membuat dan mengelola profile `Teacher`, `Student`, dan `Staff` secara manual melalui aplikasi atau melalui proses import file CSV untuk `Teacher` dan `Student`. Setelah profile tersedia, `Admin` dapat membuat credential `User` secara terpisah.
 
 ### 5.2 Teacher (Role: `teacher`)
 
@@ -64,7 +64,7 @@ Pengguna utama yang mengelola data `Student`, mencatat `Attendance`, dan melihat
 
 ### 5.3 Student (Role: `student`)
 
-`Student` merupakan objek yang datanya dicatat dalam aplikasi sekaligus pengguna yang dapat login. Setiap `Student` memiliki akun `User` yang terhubung dengan data `Student` tersebut. Setelah login, `Student` hanya dapat melihat riwayat `Attendance` miliknya sendiri.
+`Student` merupakan objek yang datanya dicatat dalam aplikasi sekaligus profile yang dapat memiliki account `User`. Setelah account dibuat dan login, `Student` hanya dapat melihat riwayat `Attendance` miliknya sendiri.
 
 > Pada versi awal, aplikasi sudah memiliki sistem login. Sistem menyediakan fitur sesuai dengan `Role` pengguna yang sedang login.
 
@@ -172,8 +172,7 @@ Data minimal `Student`:
 - `gender`;
 - `birth_date`;
 - `birth_place`;
-- email akun pada `User`;
-- akun `User` yang terhubung dengan `Student`.
+- credential `User` yang terhubung dengan `Student`, jika account sudah dibuat.
 
 `nis` harus unik untuk setiap `Student`.
 Email harus disimpan pada `User` dan harus unik untuk setiap akun.
@@ -186,26 +185,25 @@ Operasi yang tersedia:
 - mengubah data `Student`;
 - menghapus `Student`.
 
-`Admin` dapat mengelola akun `Student` saat menambahkan atau mengubah data `Student`. `Student` hanya dapat melihat data dan riwayat `Attendance` miliknya sendiri setelah login.
+`Admin` mengelola data profile `Student` secara terpisah dari account. Setelah profile disimpan, sistem dapat menampilkan pilihan untuk membuat credential `User`. `Student` hanya dapat login dan melihat data serta riwayat `Attendance` miliknya sendiri setelah account dibuat.
 
 ### 7.4 User dan Account Management
 
-`Admin` dapat mengelola akun pengguna dengan operasi berikut:
+`Admin` dapat mengelola profile dan credential pengguna dengan operasi berikut:
 
-- melihat daftar `User`;
-- membuat akun `teacher` secara manual;
-- membuat akun `student` secara manual;
-- membuat akun `staff` secara manual;
-- mengubah data akun;
-- mengaktifkan atau menonaktifkan akun;
-- membuat atau mengatur ulang password sementara.
-- mengirimkan informasi akun melalui email.
+- melihat daftar profile dan status account-nya;
+- membuat dan mengubah profile `Teacher`, `Student`, dan `Staff`;
+- membuat credential `User` untuk profile yang belum memiliki account;
+- mengubah data account;
+- mengaktifkan atau menonaktifkan account;
+- membuat atau mengatur ulang password sementara;
+- mengirimkan informasi credential melalui email.
 
 Data minimal `Teacher`:
 
 - nama lengkap;
 - `mobile_phone`;
-- akun `User` yang terhubung dengan `Teacher`.
+- credential `User` yang terhubung dengan `Teacher`, jika account sudah dibuat.
 
 `mobile_phone` harus unik untuk setiap `Teacher`.
 Email akun `Teacher` disimpan pada `User` dan harus unik. `User` terhubung dengan profile menggunakan polymorphic relation bernama `profile`.
@@ -214,7 +212,7 @@ Data minimal `Staff`:
 
 - nama lengkap;
 - `position` maksimal 50 karakter;
-- akun `User` yang terhubung dengan `Staff`;
+- credential `User` yang terhubung dengan `Staff`, jika account sudah dibuat;
 - role `admin` atau `report_viewer`.
 
 Pada versi awal, profile `Staff` dan akun awal `admin` tidak dibuat melalui formulir aplikasi. Keduanya dibuat menggunakan database seeder dan dihubungkan melalui polymorphic relation `profile`.
@@ -377,7 +375,7 @@ Sistem menampilkan dashboard sesuai Role
 User dapat mengubah password melalui profil akun
 ```
 
-Saat membuat atau mengatur ulang akun, `Admin` dapat meminta sistem mengirimkan temporary password ke email akun `Teacher`, `Student`, atau `Staff`.
+Saat membuat atau mengatur ulang account, `Admin` memasukkan email melalui dialog pembuatan credential. Sistem kemudian membuat temporary password dan mengirimkan credential tersebut ke email `Teacher`, `Student`, atau `Staff`.
 
 ### 8.2 Membuat Akun melalui Import CSV
 
@@ -422,11 +420,19 @@ Admin membuka menu Data Student
         ↓
 Admin memilih Tambah Student
         ↓
-Admin mengisi data Student dan akun User
+Admin mengisi data profile Student
         ↓
 Sistem memvalidasi data
         ↓
-Sistem menyimpan data Student dan User
+Sistem menyimpan data Student
+        ↓
+Sistem menampilkan modal "Buat account?"
+        ↓
+Admin memilih Ya atau Nanti
+        ↓
+Jika Ya, Admin mengisi email
+        ↓
+Sistem membuat credential User dan mengirimkan email
         ↓
 Sistem menampilkan daftar Student
 ```
@@ -526,7 +532,7 @@ Produk dianggap berhasil apabila:
 - pengguna dapat melihat halaman statis;
 - `Admin` dapat menambah, melihat, mengubah, dan menghapus akun serta data `Student`;
 - `Admin` dapat mengelola `Teacher`, `Subject`, `ClassRoom`, dan `TeachingAssignment`;
-- `Admin` dapat membuat akun melalui formulir manual, mengimpor profile melalui dua jenis CSV, dan membuat credential `User` setelah import;
+- `Admin` dapat membuat profile melalui formulir manual, mengimpor profile melalui dua jenis CSV, dan membuat credential `User` secara terpisah setelah profile tersedia atau setelah import;
 - sistem mengirimkan informasi akun dan temporary password ke email akun `Teacher`, `Student`, atau `Staff`;
 - data `Student` dengan `nis` yang sudah ada tidak diimpor ulang;
 - `Teacher` memiliki `mobile_phone` yang unik;
