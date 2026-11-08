@@ -315,7 +315,7 @@ Data minimal `Attendance`:
 
 - `Student`;
 - `TeachingAssignment`;
-- tanggal dan waktu presensi (`attendance_datetime`);
+- tanggal presensi (`attendance_date`);
 - status kehadiran;
 - catatan tambahan jika diperlukan.
 
@@ -326,7 +326,7 @@ Operasi yang tersedia:
 - mengubah `Attendance`;
 - menghapus `Attendance`.
 
-Pada frontend, tanggal presensi secara default menampilkan tanggal saat ini dan dapat diubah jika diperlukan. Daftar `Student` yang ditampilkan harus sesuai dengan `ClassRoom` pada `TeachingAssignment` yang dipilih. Saat disimpan, data menggunakan format tanggal dan waktu.
+Pada frontend, tanggal presensi secara default menampilkan tanggal saat ini dan dapat diubah jika diperlukan. Daftar `Student` yang ditampilkan harus sesuai dengan `ClassRoom` pada `TeachingAssignment` yang dipilih. Saat disimpan, data menggunakan format tanggal.
 
 ### 7.10 Laporan Attendance
 
@@ -337,7 +337,7 @@ Laporan minimal menyediakan:
 - filter berdasarkan tanggal atau rentang tanggal;
 - filter berdasarkan `TeachingAssignment`;
 - filter berdasarkan `Student`;
-- daftar tanggal dan waktu, nama `Student`, `ClassRoom`, `Subject`, `Teacher`, dan status kehadiran;
+- daftar tanggal, nama `Student`, `ClassRoom`, `Subject`, `Teacher`, dan status kehadiran;
 - jumlah Hadir, Izin, Sakit, dan Alpa.
 
 `Teacher` hanya dapat melihat laporan yang berkaitan dengan `TeachingAssignment` yang dimilikinya. `report_viewer` dapat melihat laporan seluruh `Student`. `Student` hanya dapat melihat laporan atau riwayat `Attendance` miliknya sendiri.
@@ -450,7 +450,7 @@ Sistem menampilkan daftar Student dari ClassRoom terkait
         ↓
 Teacher mengisi status kehadiran
         ↓
-Sistem memvalidasi dan menyimpan Attendance dengan tanggal dan waktu
+Sistem memvalidasi dan menyimpan Attendance dengan tanggal
         ↓
 Sistem menampilkan hasil pencatatan
 ```
@@ -502,9 +502,9 @@ Aturan bisnis yang digunakan pada versi awal:
 13. Kombinasi `Teacher`, `Subject`, dan `ClassRoom` hanya boleh memiliki satu `TeachingAssignment` pada konteks yang sama.
 14. Setiap `Attendance` harus terhubung dengan satu `Student` dan satu `TeachingAssignment`.
 15. `Student` pada `Attendance` harus berasal dari `ClassRoom` yang sama dengan `TeachingAssignment`.
-16. Tanggal dan waktu `Attendance` wajib diisi. Pada frontend, nilainya secara default menggunakan tanggal dan waktu saat ini, tetapi dapat diubah jika diperlukan.
+16. Tanggal `Attendance` wajib diisi. Pada frontend, nilainya secara default menggunakan tanggal saat ini, tetapi dapat diubah jika diperlukan.
 17. Status `Attendance` wajib berupa Hadir, Izin, Sakit, atau Alpa.
-18. Satu `Student` hanya boleh memiliki satu `Attendance` untuk `TeachingAssignment` dan tanggal kalender yang sama.
+18. Pencatatan `Attendance` menggunakan kombinasi `Student`, `TeachingAssignment`, dan tanggal kalender sebagai key. Jika belum ada, sistem membuat record; jika sudah ada, sistem memperbarui record tersebut. Jika nilainya tidak berubah, record tidak perlu disimpan ulang.
 19. `Teacher` hanya dapat membuat atau mengubah `Attendance` pada `TeachingAssignment` yang menjadi kewenangannya.
 20. `Student` hanya dapat melihat riwayat `Attendance` miliknya sendiri.
 21. `Admin` dapat membuat atau mengatur ulang password sementara untuk `Teacher`, `Student`, dan `Staff`.

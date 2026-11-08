@@ -86,17 +86,43 @@ Schema::create('teaching_assignments', function (Blueprint $table) {
         ->constrained('class_rooms')
         ->restrictOnDelete();
 
-    $table->unique([
-        'teacher_id',
-        'subject_id',
-        'class_id',
-    ]);
+    $table->unique(
+        ['teacher_id', 'subject_id', 'class_id'],
+        'assignments_t_s_c_unique',
+    );
 
     $table->timestamps();
 });
 ```
 
 `restrictOnDelete()` mencegah `Teacher`, `Subject`, atau `ClassRoom` dihapus jika masih digunakan oleh assignment.
+
+Parameter kedua pada `unique()` adalah nama constraint database:
+
+```php
+$table->unique(
+    ['teacher_id', 'subject_id', 'class_id'],
+    'assignments_t_s_c_unique',
+);
+```
+
+Nama custom ini membantu menghindari error `Identifier name too long` pada
+database yang membatasi panjang nama index atau constraint. Nama tersebut juga
+memudahkan ketika constraint perlu dihapus atau diubah pada migration lain.
+
+Jangan menuliskan unique constraint yang sama dua kali. Contoh berikut salah:
+
+```php
+$table->unique(['teacher_id', 'subject_id', 'class_id']);
+$table->unique(
+    ['teacher_id', 'subject_id', 'class_id'],
+    'assignments_t_s_c_unique',
+);
+```
+
+Gunakan salah satu deklarasi saja, yaitu deklarasi dengan nama custom. Jika
+keduanya ditulis, database dapat membuat dua unique constraint untuk kombinasi
+kolom yang sama tanpa manfaat tambahan.
 
 Jalankan migration:
 

@@ -74,7 +74,7 @@ erDiagram
         bigint id PK
         bigint student_id FK
         bigint teaching_assignment_id FK
-        datetime attendance_datetime
+        date attendance_date
         string status
         text note
         timestamp created_at
@@ -118,12 +118,16 @@ sick     → Sakit
 absent   → Alpa
 ```
 
-## Constraint Attendance
+## Aturan Attendance
 
-Satu data presensi tidak boleh diduplikasi berdasarkan kombinasi:
+Kombinasi berikut menjadi key pencarian Attendance:
 
 ```text
 student_id + teaching_assignment_id + attendance_date
 ```
 
-`Student` pada `Attendance` harus berasal dari `ClassRoom` yang sama dengan `TeachingAssignment`.
+`Student` pada `Attendance` harus berasal dari `ClassRoom` yang sama dengan
+`TeachingAssignment`. Jika kombinasi belum tersedia, record dibuat. Jika sudah
+tersedia dan nilainya berubah, record diperbarui menggunakan `firstOrNew()` dan
+`isDirty()`. Kombinasi tersebut
+memiliki unique constraint pada database.

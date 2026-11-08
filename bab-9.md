@@ -33,12 +33,12 @@ Setelah menyelesaikan bab ini, Anda diharapkan mampu:
 
 Tabel `teaching_assignments` sudah dibuat pada bab sebelumnya.
 
-| Field | Aturan |
-| --- | --- |
-| `teacher_id` | Required, exists pada `teachers` |
-| `subject_id` | Required, exists pada `subjects` |
-| `class_id` | Required, exists pada `class_rooms` |
-| kombinasi ketiga field | Unique |
+| Field                  | Aturan                              |
+| ---------------------- | ----------------------------------- |
+| `teacher_id`           | Required, exists pada `teachers`    |
+| `subject_id`           | Required, exists pada `subjects`    |
+| `class_id`             | Required, exists pada `class_rooms` |
+| kombinasi ketiga field | Unique                              |
 
 Satu Teacher dapat memiliki banyak assignment. Satu Subject dan ClassRoom juga dapat digunakan pada banyak assignment.
 
@@ -74,32 +74,73 @@ DELETE   /admin/teaching-assignments/{teaching_assignment}
 
 ## 9.4 Validasi `TeachingAssignment`
 
-Validasi pada `StoreTeachingAssignmentRequest`:
+Validasi pada `StoreTeachingAssignmentRequest` tidak hanya memeriksa setiap
+foreign key. Request juga harus memastikan bahwa hanya `admin` yang dapat
+menyimpan assignment dan kombinasi `Teacher`, `Subject`, serta `ClassRoom` belum
+tersedia.
+
+```php
+use Illuminate\Validation\Rule;
+
+public function authorize(): bool
+{
+    return $this->user()?->role === 'admin';
+}
+```
+
+Rules yang digunakan:
 
 ```php
 public function rules(): array
 {
     return [
-        'teacher_id' => ['required', 'exists:teachers,id'],
+        'teacher_id' => [
+            'required',
+            'exists:teachers,id',
+            Rule::unique('teaching_assignments')->where(function ($query) {
+                return $query
+                    ->where('subject_id', $this->input('subject_id'))
+                    ->where('class_id', $this->input('class_id'));
+            }),
+        ],
         'subject_id' => ['required', 'exists:subjects,id'],
         'class_id' => ['required', 'exists:class_rooms,id'],
     ];
 }
 ```
 
-Database sudah memiliki unique constraint:
+`Rule::unique()` pada `teacher_id` digabungkan dengan kondisi `subject_id` dan
+`class_id`. Dengan demikian, validasi memeriksa kombinasi ketiga field, bukan
+hanya `teacher_id` secara terpisah.
+
+Database juga memiliki unique constraint sebagai perlindungan lapisan kedua:
 
 ```php
-$table->unique([
-    'teacher_id',
-    'subject_id',
-    'class_id',
-]);
+$table->unique(
+    ['teacher_id', 'subject_id', 'class_id'],
+    'assignments_t_s_c_unique',
+);
 ```
 
-Constraint tersebut mencegah kombinasi Teacher, Subject, dan ClassRoom yang sama disimpan dua kali.
+Constraint tersebut mencegah kombinasi `Teacher`, `Subject`, dan `ClassRoom`
+yang sama disimpan dua kali meskipun request tidak berasal dari form frontend.
 
-Pada `UpdateTeachingAssignmentRequest`, gunakan `Rule::unique()` dan abaikan record yang sedang diubah.
+Pada `UpdateTeachingAssignmentRequest`, gunakan rule yang sama dan abaikan
+record yang sedang diubah:
+
+```php
+/** @var TeachingAssignment $assignment */
+$assignment = $this->route('teaching_assignment');
+
+Rule::unique('teaching_assignments')->where(
+    fn ($query) => $query
+        ->where('subject_id', $this->input('subject_id'))
+        ->where('class_id', $this->input('class_id'))
+)->ignore($assignment);
+```
+
+`ignore($assignment)` diperlukan agar assignment tidak dianggap duplikat dengan
+dirinya sendiri ketika hanya field lain yang diubah.
 
 ---
 
@@ -306,7 +347,64 @@ Dengan demikian, pembuatan profile dan pembuatan account tetap merupakan dua pro
 
 ---
 
-## 9.12 Ringkasan Bab Ini
+## 9.12 Custom Validation Error Message
+
+Ketika kombinasi `Teacher`, `Subject`, dan `ClassRoom` yang sama disimpan,
+Laravel dapat menghasilkan pesan default seperti:
+
+```text
+The teacher id has already been taken.
+```
+
+Pesan tersebut menggunakan nama field dan bahasa teknis, sehingga kurang
+sesuai untuk ditampilkan kepada user. Kita dapat menggantinya dengan pesan yang
+lebih mudah dipahami.
+
+Pada file `app/Http/Requests/StoreTeachingAssignmentRequest.php`, tambahkan
+method `messages()`:
+
+```php
+public function messages(): array
+{
+    return [
+        'teacher_id.unique' =>
+            'Teacher sudah memiliki assignment untuk Subject dan ClassRoom tersebut.',
+    ];
+}
+```
+
+Key `teacher_id.unique` berarti pesan tersebut digunakan ketika rule `unique`
+pada field `teacher_id` gagal. Karena rule `unique` menggunakan kondisi
+`subject_id` dan `class_id`, pesan tersebut mewakili kegagalan kombinasi ketiga
+field.
+
+Validasi `required` dan `exists` tetap menggunakan pesan default Laravel pada
+contoh ini. Jika ingin seluruh pesan lebih ramah user, tambahkan pesan lain,
+misalnya:
+
+```php
+public function messages(): array
+{
+    return [
+        'teacher_id.required' => 'Teacher wajib dipilih.',
+        'teacher_id.exists' => 'Teacher yang dipilih tidak tersedia.',
+        'teacher_id.unique' =>
+            'Teacher sudah memiliki assignment untuk Subject dan ClassRoom tersebut.',
+        'subject_id.required' => 'Subject wajib dipilih.',
+        'subject_id.exists' => 'Subject yang dipilih tidak tersedia.',
+        'class_id.required' => 'ClassRoom wajib dipilih.',
+        'class_id.exists' => 'ClassRoom yang dipilih tidak tersedia.',
+    ];
+}
+```
+
+Karena `UpdateTeachingAssignmentRequest` juga menggunakan validasi kombinasi
+yang sama, method `messages()` sebaiknya ditambahkan di request tersebut agar
+pesannya konsisten ketika proses edit gagal.
+
+---
+
+## 9.13 Ringkasan Bab Ini
 
 Pada bab ini kita telah:
 
@@ -318,5 +416,6 @@ Pada bab ini kita telah:
 - menerapkan server-side pagination;
 - membuat dan menjalankan seeder secara manual;
 - menyiapkan data yang diperlukan untuk pencatatan Attendance.
+- membuat `custom validation message` untuk validasi yang gagal.
 
 Pada Bab 10, `Teacher` akan menggunakan `TeachingAssignment` untuk mencatat Attendance Student.

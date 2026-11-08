@@ -21,9 +21,9 @@ Setelah menyelesaikan bab ini, Anda diharapkan mampu:
 - membaca struktur `Attendance` dari SRS;
 - membuat migration dan model `Attendance`;
 - membuat relasi `belongsTo` dan `hasMany`;
-- menggunakan tipe data `datetime` dan `text`;
+- menggunakan tipe data `date` dan `text`;
 - menyimpan status Attendance;
-- memahami validasi duplikasi berdasarkan tanggal kalender;
+- menggunakan `firstOrNew()` dan `isDirty()` untuk Attendance berdasarkan tanggal;
 - menguji relasi menggunakan seeder dan Tinker.
 
 ---
@@ -39,7 +39,7 @@ Field minimal:
 | `id`                     | bigint      | Primary key                       |
 | `student_id`             | foreign key | Required                          |
 | `teaching_assignment_id` | foreign key | Required                          |
-| `attendance_datetime`    | datetime    | Required                          |
+| `attendance_date`        | date        | Required, key tanggal             |
 | `status`                 | string      | Required                          |
 | `note`                   | text        | Nullable                          |
 | `created_at`             | timestamp   | Laravel timestamp                |
@@ -87,9 +87,14 @@ Schema::create('attendances', function (Blueprint $table) {
         ->constrained('teaching_assignments')
         ->restrictOnDelete();
 
-    $table->dateTime('attendance_datetime');
+    $table->date('attendance_date');
     $table->string('status', 20);
     $table->text('note')->nullable();
+    $table->unique([
+        'student_id',
+        'teaching_assignment_id',
+        'attendance_date',
+    ]);
     $table->timestamps();
 });
 ```
@@ -130,7 +135,7 @@ class Attendance extends Model
     protected $fillable = [
         'student_id',
         'teaching_assignment_id',
-        'attendance_datetime',
+        'attendance_date',
         'status',
         'note',
     ];
@@ -138,7 +143,7 @@ class Attendance extends Model
     protected function casts(): array
     {
         return [
-            'attendance_datetime' => 'datetime',
+            'attendance_date' => 'date',
         ];
     }
 
@@ -258,17 +263,20 @@ class AttendanceSeeder extends Seeder
             'class_id' => $classRoom->id,
         ]);
 
-        Attendance::firstOrCreate(
-            [
-                'student_id' => $student->id,
-                'teaching_assignment_id' => $assignment->id,
-                'attendance_datetime' => '2026-11-04 07:00:00',
-            ],
-            [
-                'status' => 'present',
-                'note' => null,
-            ]
-        );
+        $attendance = Attendance::firstOrNew([
+            'student_id' => $student->id,
+            'teaching_assignment_id' => $assignment->id,
+            'attendance_date' => '2026-11-04',
+        ]);
+
+        $attendance->fill([
+            'status' => 'present',
+            'note' => null,
+        ]);
+
+        if ($attendance->isDirty()) {
+            $attendance->save();
+        }
     }
 }
 ```
@@ -312,31 +320,50 @@ $attendance->teachingAssignment->attendances;
 
 ---
 
-## 6.9 Validasi Duplikasi Berdasarkan Tanggal
+## 6.9 Menyimpan Rekaman pada Tanggal yang Sama
 
-Field yang disimpan adalah `attendance_datetime`, misalnya:
+Field `attendance_date` menjadi key tanggal presensi. Waktu pembuatan dan
+perubahan record dilacak oleh `created_at` dan `updated_at`:
 
 ```text
-2026-11-04 07:00:00
+attendance_date: 2026-11-04
+created_at:      2026-11-04 07:00:00
+updated_at:      2026-11-04 07:00:00
 ```
 
-Namun, aturan bisnis menyatakan bahwa satu Student tidak boleh memiliki Attendance lebih dari satu kali pada tanggal kalender yang sama untuk TeachingAssignment yang sama.
+Sistem menggunakan `firstOrNew()` dan `isDirty()`. Jika kombinasi Student,
+TeachingAssignment, dan `attendance_date` belum ada, record baru dibuat. Jika
+sudah ada dan status berubah, record tersebut diperbarui.
 
-Karena itu, pemeriksaan duplikasi harus menggunakan tanggal, bukan datetime lengkap:
+Contoh pola penyimpanannya:
 
 ```php
-$alreadyExists = Attendance::query()
+$attendance = Attendance::query()
     ->where('student_id', $studentId)
-    ->where('teaching_assignment_id', $assignmentId)
-    ->whereDate('attendance_datetime', $attendanceDate)
-    ->exists();
+    ->where('teaching_assignment_id', $assignment->id)
+    ->where('attendance_date', $date)
+    ->firstOrNew([
+        'student_id' => $studentId,
+        'teaching_assignment_id' => $assignment->id,
+        'attendance_date' => $date,
+    ]);
+
+$attendance->fill(['status' => $status]);
+
+if ($attendance->isDirty()) {
+    $attendance->save();
+}
 ```
 
-Jika `$alreadyExists` bernilai `true`, sistem harus menolak penyimpanan data baru.
+Validasi yang tetap diperlukan adalah:
 
-Validasi ini perlu dilakukan pada server. Validasi pada frontend hanya membantu pengguna dan tidak dapat menggantikan validasi Laravel.
+- `Student` berasal dari ClassRoom yang sama dengan TeachingAssignment;
+- Teacher memiliki TeachingAssignment tersebut;
+- status Attendance valid;
+- tanggal memiliki format yang valid.
 
-> Catatan desain: karena `attendance_datetime` menyimpan tanggal dan waktu sekaligus, pemeriksaan kombinasi tanggal dilakukan melalui query `whereDate`. Pada tahap optimasi database, aturan ini dapat dikembangkan menggunakan field `attendance_date` terpisah atau strategi database khusus.
+Dengan `attendance_date`, `firstOrNew()` dapat mencocokkan tanggal secara
+langsung tanpa memerlukan field datetime tambahan.
 
 ---
 
@@ -360,10 +387,11 @@ Pemeriksaan ini penting karena foreign key saja belum cukup. Foreign key hanya m
 
 1. Buat Attendance dengan status `excused` dan isi `note`.
 2. Buat Attendance dengan status `sick`.
-3. Coba membuat Attendance kedua pada tanggal yang sama untuk Student dan assignment yang sama.
-4. Coba membuat Attendance untuk Student dari ClassRoom yang berbeda.
-5. Tampilkan seluruh Attendance seorang Student.
-6. Tampilkan seluruh Attendance pada sebuah TeachingAssignment.
+3. Simpan Attendance kedua pada tanggal yang sama dengan status berbeda.
+4. Pastikan record lama diperbarui, bukan record baru yang dibuat.
+5. Coba membuat Attendance untuk Student dari ClassRoom yang berbeda.
+6. Tampilkan seluruh Attendance seorang Student.
+7. Tampilkan seluruh Attendance pada sebuah TeachingAssignment.
 
 Gunakan SRS untuk memeriksa field, status, relasi, dan aturan validasinya.
 
@@ -379,7 +407,7 @@ Pada bab ini kita telah:
 - menyimpan status dan catatan presensi;
 - membuat data pengujian melalui seeder;
 - menguji relasi menggunakan Tinker;
-- memahami validasi duplikasi berdasarkan tanggal kalender;
+- menggunakan `firstOrNew()` dan `isDirty()` untuk membuat atau memperbarui Attendance;
 - memvalidasi kesesuaian `Student` dan `ClassRoom`.
 
 Pada bab berikutnya, kita akan membuat halaman dan workflow untuk `admin`, termasuk pengelolaan profile, account, master data, dan `TeachingAssignment`. Pencatatan `Attendance` belum dibuat pada tahap ini.

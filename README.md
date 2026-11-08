@@ -71,7 +71,7 @@ Membuat `TeachingAssignment` sebagai penghubung antara `Teacher`, `Subject`, dan
 
 ### Bab 6 — Attendance
 
-Membuat entitas `Attendance`, relasi dengan `Student` dan `TeachingAssignment`, status presensi, serta validasi duplikasi berdasarkan tanggal kalender.
+Membuat entitas `Attendance`, relasi dengan `Student` dan `TeachingAssignment`, status presensi, serta pola `firstOrNew()` dan `isDirty()` berdasarkan tanggal.
 
 [Baca Bab 6](bab-6.md)
 
@@ -99,6 +99,12 @@ Menggunakan dashboard dinamis untuk Role `teacher`, memilih `TeachingAssignment`
 
 [Baca Bab 10](bab-10.md)
 
+### Bab 11 — Review dan Penyempurnaan Teacher Dashboard
+
+Menambahkan ringkasan kelas, jumlah Student berdasarkan gender, dan ringkasan Attendance minggu berjalan dengan filter `TeachingAssignment`.
+
+[Baca Bab 11](bab-11.md)
+
 ## Dokumen Perancangan
 
 Sebelum membuat fitur aplikasi, kebutuhan produk dan teknis dirumuskan dalam dua dokumen:
@@ -117,6 +123,8 @@ SRS menjadi acuan utama ketika menentukan field, tipe data, constraint, relasi, 
 - [Contekan CRUD Subject](bab-tambahan-crud-subject.md)
 - [Contekan CRUD ClassRoom](bab-tambahan-crud-classroom.md)
 - [MUI Styling dan Theme](bab-tambahan-mui-styling.md)
+- [Konfigurasi Timezone Laravel](bab-tambahan-konfigurasi-timezone.md)
+- [Contekan Implementasi Dashboard Teacher](bab-tambahan-implementasi-dashboard-teacher.md)
 
 Contoh file import CSV tersedia pada folder [contoh-csv](contoh-csv):
 

@@ -301,7 +301,7 @@ Field minimal:
 | `id`                     | bigint      | Primary key       |
 | `student_id`             | foreign key | Required          |
 | `teaching_assignment_id` | foreign key | Required          |
-| `attendance_datetime`    | datetime    | Required          |
+| `attendance_date`        | date        | Required, key tanggal |
 | `status`                 | string/enum | Required          |
 | `note`                   | text        | Nullable          |
 | `created_at`             | timestamp   | Laravel timestamp |
@@ -509,16 +509,20 @@ Sistem harus menolak kombinasi `Teacher`, `Subject`, dan `ClassRoom` yang sudah 
 - memilih tanggal presensi, dengan tanggal saat ini sebagai nilai default;
 - melihat daftar `Student` dari `ClassRoom` assignment;
 - mengisi status setiap `Student`;
-- menyimpan `attendance_datetime`;
+- menyimpan `attendance_date`;
 - menambahkan catatan jika diperlukan.
 
 ### FR-011 Attendance Validation
 
-Sistem harus menolak `Attendance` jika:
+Sistem harus menolak pencatatan `Attendance` jika:
 
 - `Student` tidak berasal dari `ClassRoom` assignment;
-- kombinasi Student, assignment, dan tanggal kalender sudah memiliki data;
 - status tidak termasuk nilai yang diizinkan.
+
+Jika kombinasi `Student`, `TeachingAssignment`, dan `attendance_date` sudah
+memiliki data, sistem memperbarui record tersebut. Jika belum ada, sistem
+membuat record baru. Jika status tidak berubah, record tidak perlu disimpan
+ulang sehingga `updated_at` tidak berubah.
 
 ### FR-012 Attendance Management
 
@@ -536,7 +540,7 @@ Sistem harus menyediakan laporan yang dapat difilter berdasarkan:
 - `TeachingAssignment`;
 - `Student`.
 
-Laporan menampilkan tanggal dan waktu, Student, Class, Subject, Teacher, dan status.
+Laporan menampilkan tanggal, Student, Class, Subject, Teacher, dan status.
 
 `admin` dan `report_viewer` dapat melihat laporan seluruh `Student`. `teacher` hanya dapat melihat laporan berdasarkan `TeachingAssignment` miliknya.
 
@@ -660,7 +664,7 @@ Email dan role `Teacher`, `Student`, serta `Staff` divalidasi pada entitas `User
 | ------------------------ | ----------------------------------------------------- |
 | `student_id`             | Required, exists pada `students`                      |
 | `teaching_assignment_id` | Required, exists pada `teaching_assignments`          |
-| `attendance_datetime`    | Required, date/time                                   |
+| `attendance_date`        | Required, date                                        |
 | `status`                 | Required, `present`, `excused`, `sick`, atau `absent` |
 | `note`                   | Nullable, string                                      |
 
@@ -824,8 +828,10 @@ Aturan authorization penting:
 
 - `teacher` hanya melihat `Student` pada `ClassRoom` assignment miliknya;
 - tanggal presensi secara default adalah tanggal saat ini;
-- sistem menyimpan tanggal dan waktu presensi;
-- data presensi untuk Student, assignment, dan tanggal yang sama tidak dapat diduplikasi;
+- sistem menyimpan tanggal presensi;
+- data presensi menggunakan kombinasi Student, assignment, dan `attendance_date` sebagai key pencarian;
+- jika kombinasi tersebut belum ada, sistem membuat record baru;
+- jika kombinasi tersebut sudah ada dan nilainya berubah, sistem memperbarui record menggunakan `firstOrNew()` dan `isDirty()`;
 - `student` hanya melihat riwayat miliknya sendiri.
 - `report_viewer` hanya melihat laporan dan tidak dapat mengubah data aplikasi.
 
