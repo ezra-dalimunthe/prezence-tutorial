@@ -4,6 +4,21 @@ Repository ini berisi materi tutorial pengembangan aplikasi web menggunakan Lara
 
 Tutorial ditulis untuk lingkungan Windows dengan Laravel Herd, tetapi sebagian besar langkah dapat diterapkan pada sistem operasi lain selama PHP, Composer, Node.js, dan database telah tersedia.
 
+## Kredit
+
+Tutorial ini dibuat dengan bantuan AI assistant **Codex berbasis GPT-5**.
+Dalam proyek ini, assistant tersebut diberi nama **GPT-5.6-Luna**.
+
+Konfigurasi bantuan AI:
+
+- Basis model: `GPT-5`
+- Nama assistant dalam proyek: `GPT-5.6-Luna`
+- Temperature level: `medium`
+
+Kontribusi AI assistant tersebut mencakup perancangan materi, peninjauan
+dokumen PRD dan SRS, penyusunan contoh kode, serta pendampingan implementasi
+project.
+
 ## Tujuan Tutorial
 
 Tutorial ini membahas konsep dan praktik berikut:
@@ -104,6 +119,27 @@ Menggunakan dashboard dinamis untuk Role `teacher`, memilih `TeachingAssignment`
 Menambahkan ringkasan kelas, jumlah Student berdasarkan gender, dan ringkasan Attendance minggu berjalan dengan filter `TeachingAssignment`.
 
 [Baca Bab 11](bab-11.md)
+
+### Bab 12 — Report Attendance untuk Teacher
+
+Membuat report Attendance berdasarkan bulan, tahun, dan `TeachingAssignment` dengan tabel Student × tanggal serta ringkasan status H/I/S/A.
+
+[Baca Bab 12](bab-12.md)
+
+### Bab 13 — Profile dan Password User
+
+Membuat halaman profile dinamis berdasarkan polymorphic relation, menampilkan
+informasi account, mengubah data profile, dan mengubah password User.
+
+[Baca Bab 13](bab-13.md)
+
+### Bab 14 — Penyelesaian dan Penyempurnaan Aplikasi
+
+Melakukan gap analysis terhadap PRD dan SRS, menyelesaikan fitur secara mandiri,
+menguji authorization, serta menyesuaikan tampilan dan istilah aplikasi agar
+lebih intuitif.
+
+[Baca Bab 14](bab-14.md)
 
 ## Dokumen Perancangan
 

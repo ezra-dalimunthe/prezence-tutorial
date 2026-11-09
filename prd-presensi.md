@@ -219,14 +219,15 @@ Pada versi awal, profile `Staff` dan akun awal `admin` tidak dibuat melalui form
 
 ### 7.5 Authentication dan Password
 
-Pengguna login menggunakan login identifier dan password.
+Semua pengguna login menggunakan alamat email dan password. Email merupakan
+atribut wajib pada account `User`, bukan pada profile atau file import CSV.
 
-| Role | Login Identifier | Password |
+| Role | Login Credential | Password |
 |---|---|---|
 | `admin` | Email yang dibuat pada database seeder | Dibuat pada database seeder |
-| `teacher` | `mobile_phone` | Password sementara dari `Admin` |
-| `student` | `nis` dan `birth_date` dengan format `YYYY-MM-DD` | Password sementara dari `Admin` |
-| `report_viewer` | Email akun `User` | Password sementara dari `Admin` |
+| `teacher` | Email account `User` | Password sementara dari `Admin` |
+| `student` | Email account `User` | Password sementara dari `Admin` |
+| `report_viewer` | Email account `User` | Password sementara dari `Admin` |
 
 Aturan password:
 
@@ -239,7 +240,8 @@ Aturan password:
 
 Email dikirim menggunakan Laravel Mail melalui SMTP lokal `smtp4dev`. Pada lingkungan pembelajaran, email tidak dikirim ke layanan email eksternal, tetapi ditangkap oleh `smtp4dev` untuk diperiksa melalui inbox lokal.
 
-> Catatan: tanggal lahir tidak selalu unik. Detail cara membedakan dua `Student` dengan tanggal lahir yang sama, misalnya menggunakan `nis` sebagai identifier tambahan, akan ditentukan dalam SRS.
+`mobile_phone`, `nis`, dan `birth_date` tetap digunakan sebagai data profile dan
+validasi entitas, tetapi tidak digunakan sebagai login identifier.
 
 ### 7.6 Import User melalui CSV
 
@@ -324,7 +326,6 @@ Operasi yang tersedia:
 - melihat daftar `Attendance` sesuai hak akses;
 - menambah `Attendance`;
 - mengubah `Attendance`;
-- menghapus `Attendance`.
 
 Pada frontend, tanggal presensi secara default menampilkan tanggal saat ini dan dapat diubah jika diperlukan. Daftar `Student` yang ditampilkan harus sesuai dengan `ClassRoom` pada `TeachingAssignment` yang dipilih. Saat disimpan, data menggunakan format tanggal.
 
@@ -334,9 +335,9 @@ Pengguna dapat melihat data `Attendance` dalam bentuk laporan sesuai hak aksesny
 
 Laporan minimal menyediakan:
 
-- filter berdasarkan tanggal atau rentang tanggal;
-- filter berdasarkan `TeachingAssignment`;
-- filter berdasarkan `Student`;
+- filter berdasarkan bulan, tahun, dan `TeachingAssignment`;
+- rentang tanggal laporan dihitung dari hari pertama sampai hari terakhir bulan
+  pada tahun yang dipilih;
 - daftar tanggal, nama `Student`, `ClassRoom`, `Subject`, `Teacher`, dan status kehadiran;
 - jumlah Hadir, Izin, Sakit, dan Alpa.
 
@@ -366,7 +367,7 @@ Pengguna tidak boleh melihat atau mengubah data yang berada di luar hak akses `R
 ```text
 User membuka halaman login
         ↓
-User mengisi login identifier dan password
+User mengisi email dan password
         ↓
 Sistem memeriksa Role dan kredensial User
         ↓
@@ -460,7 +461,7 @@ Sistem menampilkan hasil pencatatan
 ```text
 Teacher membuka menu Laporan
         ↓
-Teacher memilih filter tanggal, TeachingAssignment, atau Student
+Teacher memilih bulan, tahun, dan TeachingAssignment
         ↓
 Sistem mengambil data `Attendance`
         ↓
@@ -523,10 +524,8 @@ Aturan tersebut dapat disesuaikan setelah rancangan teknis dibuat.
 Produk dianggap berhasil apabila:
 
 - aplikasi dapat dibuka melalui browser;
-- `Admin`, `Teacher`, `Student`, dan `Staff` dapat login menggunakan akun masing-masing;
 - sistem menampilkan fitur sesuai dengan peran pengguna;
-- `Teacher` dapat login menggunakan `mobile_phone` dan password;
-- `Student` dapat login menggunakan `birth_date` berformat `YYYY-MM-DD` dan password;
+- `Admin`, `Teacher`, `Student`, dan `Staff` dapat login menggunakan email dan password;
 - `Admin` dapat membuat atau mengatur ulang password sementara;
 - `Teacher`, `Student`, dan `Staff` dapat mengubah password sendiri;
 - pengguna dapat melihat halaman statis;
@@ -537,11 +536,11 @@ Produk dianggap berhasil apabila:
 - data `Student` dengan `nis` yang sudah ada tidak diimpor ulang;
 - `Teacher` memiliki `mobile_phone` yang unik;
 - `Teacher` dapat mencatat `Attendance` untuk `Student` pada `ClassRoom` yang sesuai;
-- `Teacher` dapat mengubah dan menghapus `Attendance` yang menjadi kewenangannya;
+- `Teacher` dapat mengubah `Attendance` yang menjadi kewenangannya;
 - `Student` hanya dapat melihat `Attendance` miliknya sendiri;
 - `report_viewer` dapat melihat laporan `Attendance` seluruh `Student`;
 - sistem menolak data yang tidak valid;
-- laporan dapat difilter berdasarkan tanggal, `TeachingAssignment`, atau `Student`;
+- laporan dapat difilter berdasarkan bulan, tahun, dan `TeachingAssignment`;
 - laporan menampilkan jumlah setiap status `Attendance` dengan benar;
 - data tetap tersimpan setelah aplikasi ditutup dan dibuka kembali.
 
@@ -567,7 +566,7 @@ Pengembangan aplikasi direncanakan dengan urutan berikut:
 1. membuat project Laravel;
 2. menjalankan project melalui Laravel Herd;
 3. membuat halaman statis;
-4. membuat autentikasi, login identifier, dan `Role` pengguna;
+4. membuat autentikasi email, password, dan `Role` pengguna;
 5. membuat struktur profile `Staff` yang diperlukan oleh akun awal `Admin`;
 6. membuat database seeder untuk profile `Staff` dan akun awal `Admin`;
 7. membuat fitur password sementara dan perubahan password;

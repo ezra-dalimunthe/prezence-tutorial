@@ -98,10 +98,10 @@ Akun awal `admin` dibuat melalui database seeder sebagai `Staff` dengan `role = 
 
 `teacher` dapat:
 
-- login menggunakan `mobile_phone` dan password;
+- login menggunakan email dan password;
 - melihat `TeachingAssignment` miliknya;
 - melihat `Student` pada `ClassRoom` yang terkait dengan assignment miliknya;
-- membuat, mengubah, dan menghapus `Attendance` pada assignment miliknya;
+- membuat dan mengubah `Attendance` pada assignment miliknya;
 - melihat laporan berdasarkan assignment miliknya;
 - mengubah password sendiri.
 
@@ -109,7 +109,7 @@ Akun awal `admin` dibuat melalui database seeder sebagai `Staff` dengan `role = 
 
 `student` dapat:
 
-- login menggunakan login credential yang ditentukan pada bagian Authentication;
+- login menggunakan email dan password;
 - melihat profil sendiri;
 - melihat riwayat `Attendance` sendiri;
 - melihat ringkasan kehadiran sendiri;
@@ -123,7 +123,7 @@ Akun awal `admin` dibuat melalui database seeder sebagai `Staff` dengan `role = 
 
 - login menggunakan email dan password;
 - melihat laporan `Attendance` seluruh `Student`;
-- memfilter laporan berdasarkan tanggal, `TeachingAssignment`, dan `Student`;
+- memfilter laporan berdasarkan bulan, tahun, dan `TeachingAssignment`;
 - melihat ringkasan status `Attendance`.
 
 `report_viewer` tidak dapat mengubah data master atau mencatat `Attendance`.
@@ -366,43 +366,34 @@ Attendance
 
 ## 7. Authentication dan Password
 
-### 7.1 Login Identifier
+### 7.1 Login
 
-| Role             | Login Identifier                        |
-| ---------------- | --------------------------------------- |
-| `admin`          | Email akun yang dibuat pada seeder      |
-| `teacher`        | `mobile_phone`                          |
-| `student`        | `nis` dan `birth_date`                  |
-| `report_viewer`  | Email akun `User`                       |
+| Role            | Login credential   |
+| --------------- | ------------------ |
+| `admin`         | Email dan password |
+| `teacher`       | Email dan password |
+| `student`       | Email dan password |
+| `report_viewer` | Email dan password |
 
-Password digunakan bersama login identifier.
+Semua account `User` wajib memiliki email yang unik. `mobile_phone`, `nis`, dan
+`birth_date` tetap merupakan data profile dan tidak digunakan sebagai login
+identifier.
 
-### 7.2 Catatan tentang Login `student`
-
-`birth_date` tidak selalu unik. Dua atau lebih `Student` dapat memiliki tanggal lahir yang sama. Karena itu, SRS ini menggunakan keputusan sementara berikut:
-
-```text
-student login identifier = nis + birth_date
-password = temporary password atau password pengguna
-```
-
-Tanggal lahir tetap digunakan sebagai bagian login, tetapi `nis` digunakan sebagai pembeda agar proses authentication tidak ambigu. Keputusan ini perlu dikonfirmasi sebelum implementasi final.
-
-### 7.3 Temporary Password
+### 7.2 Temporary Password
 
 Ketika `Admin` membuat akun:
 
 1. Sistem membuat temporary password.
 2. Sistem menyimpan password dalam bentuk hash.
 3. Sistem mengatur `must_change_password = true`.
-4. Sistem mengirim login identifier dan temporary password melalui email.
+4. Sistem mengirim email account dan temporary password melalui email tersebut.
 5. User login menggunakan credential tersebut.
 6. User diarahkan untuk mengganti password.
 7. Setelah berhasil mengganti password, sistem mengubah `must_change_password` menjadi `false`.
 
 `Admin` dapat membuat temporary password baru jika User lupa password.
 
-### 7.4 Email
+### 7.3 Email
 
 Email dikirim menggunakan Laravel Mail melalui SMTP lokal `smtp4dev`.
 
@@ -410,7 +401,7 @@ Email akun minimal berisi:
 
 - nama profile atau penerima;
 - Role;
-- login identifier;
+- email account;
 - temporary password;
 - instruksi login;
 - instruksi mengganti password.
@@ -526,7 +517,7 @@ ulang sehingga `updated_at` tidak berubah.
 
 ### FR-012 Attendance Management
 
-`Teacher` dapat mengubah atau menghapus `Attendance` yang terkait dengan assignment miliknya.
+`Teacher` dapat mengubah `Attendance` yang terkait dengan assignment miliknya.
 
 ### FR-013 Student Attendance History
 
@@ -536,9 +527,13 @@ ulang sehingga `updated_at` tidak berubah.
 
 Sistem harus menyediakan laporan yang dapat difilter berdasarkan:
 
-- tanggal atau rentang tanggal;
-- `TeachingAssignment`;
-- `Student`.
+- bulan;
+- tahun;
+- `TeachingAssignment`.
+
+Rentang tanggal laporan dihitung dari hari pertama sampai hari terakhir bulan
+pada tahun yang dipilih. Filter Student tidak diperlukan karena Student sudah
+ditentukan oleh `ClassRoom` pada `TeachingAssignment`.
 
 Laporan menampilkan tanggal, Student, Class, Subject, Teacher, dan status.
 
@@ -801,8 +796,8 @@ Aturan authorization penting:
 ### Authentication
 
 - `admin` dapat login menggunakan akun hasil seeder;
-- `teacher` dapat login menggunakan `mobile_phone` dan password;
-- `student` dapat login menggunakan login credential yang ditetapkan;
+- `teacher` dapat login menggunakan email dan password;
+- `student` dapat login menggunakan email dan password;
 - `report_viewer` dapat login menggunakan email dan password;
 - User yang belum login dan membuka `/` diarahkan ke `/login`;
 - User yang berhasil login diarahkan ke dashboard pada `/`;
@@ -847,12 +842,11 @@ Aturan authorization penting:
 
 Sebelum implementasi final, beberapa keputusan berikut perlu ditetapkan:
 
-1. Apakah login `student` menggunakan kombinasi `nis + birth_date`, atau hanya `birth_date`?
-2. Jika `mobile_phone` sudah ada saat import atau email sudah ada saat pembuatan credential, apakah data tersebut `skipped` atau `failed`?
-3. Apakah `gender` menggunakan nilai internal `male`/`female` dengan label Indonesia, atau nilai lain?
-4. Apakah `Teacher` dapat melihat semua `Student` pada assignment miliknya, tetapi tidak dapat mengubah data `Student`?
-5. Apakah `Admin` dapat melihat dan mengubah `Attendance`, atau hanya mengelola data master?
-6. Apakah password wajib diganti pada login pertama atau hanya dianjurkan?
+1. Jika `mobile_phone` sudah ada saat import atau email sudah ada saat pembuatan credential, apakah data tersebut `skipped` atau `failed`?
+2. Apakah `gender` menggunakan nilai internal `male`/`female` dengan label Indonesia, atau nilai lain?
+3. Apakah `Teacher` dapat melihat semua `Student` pada assignment miliknya, tetapi tidak dapat mengubah data `Student`?
+4. Apakah `Admin` dapat melihat dan mengubah `Attendance`, atau hanya mengelola data master?
+5. Apakah password wajib diganti pada login pertama atau hanya dianjurkan?
 
 Keputusan tersebut dapat diperbarui setelah review terhadap SRS ini.
 
